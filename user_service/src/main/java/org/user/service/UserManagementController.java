@@ -10,7 +10,7 @@ public class UserManagementController {
 
     @GetMapping("/create")
     public String addUser(){
-        return "User Create SuccessFully";
+        return "User Create SuccessFully_____";
     }
 
     @GetMapping("/update")
