@@ -10,9 +10,19 @@ pipeline {
     stage('Detect Changed Microservices') {
       steps {
         script {
+          // 👇 This is CRITICAL to compare with latest remote branch
+          sh "git remote set-url origin https://github.com/atulpatel2001/CI_CD_DEMO.git"
+          sh "git fetch origin master"
+
+          // 👇 Do the actual diff
           def changedFiles = sh(script: 'git diff --name-only origin/master...HEAD', returnStdout: true).trim().split('\n')
-          def serviceDirs = changedFiles.findAll { it.startsWith('user_service/') || it.startsWith('personal_expense/') }.collect {
-            it.split('/')[1]
+
+          echo "[DEBUG] Changed files: ${changedFiles}"
+
+          def serviceDirs = changedFiles.findAll {
+            it.startsWith('user_service/') || it.startsWith('personal_expense/')
+          }.collect {
+            it.split('/')[0] // 👈 Use 0 here, not 1, if top-level folder
           }.unique()
 
           if (serviceDirs.isEmpty()) {
@@ -26,6 +36,7 @@ pipeline {
         }
       }
     }
+
  stage('Build & Push Docker Image') {
       when {
         expression { env.CHANGED_SERVICES != null && env.CHANGED_SERVICES != '' }
