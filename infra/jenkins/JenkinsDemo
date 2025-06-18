@@ -1,0 +1,85 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_REGISTRY = "docker.io/atulpatel2001"
+        ENV = "prod"
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Detect Changed Services') {
+            steps {
+                script {
+                    def changed = sh(
+                        script: "git diff --name-only HEAD^ HEAD",
+                        returnStdout: true
+                    ).trim().split("\n")
+                    echo "[DEBUG] Changed files: ${changed}"
+
+                    def services = changed.findAll { it.startsWith('microservices/') }
+                        .collect { it.split("/")[1] }
+                        .unique()
+
+                    if (services.isEmpty()) {
+                        error "❌ No microservice changes detected. Stopping pipeline."
+                    }
+
+                    env.SERVICES = services.join(',')
+                    echo "[INFO] Detected services: ${env.SERVICES}"
+                }
+            }
+        }
+
+        stage('Build & Push Docker Images') {
+            steps {
+                script {
+                    def services = env.SERVICES.split(',')
+
+                    services.each { svc ->
+                        echo "[⚙️ BUILDING] ${svc}..."
+                        dir("microservices/${svc}") {
+                            sh "mvn clean package jib:build -Dimage=${DOCKER_REGISTRY}/${svc}:latest"
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Approve for Prod Deployment') {
+            when {
+                environment name: 'ENV', value: 'prod'
+            }
+            steps {
+                input message: 'Approve deployment to Production?', ok: 'Deploy'
+            }
+        }
+
+        stage('Deploy to Kubernetes via Helm') {
+            steps {
+                script {
+                    def services = env.SERVICES.split(',')
+
+                    services.each { svc ->
+                        def chartPath = "microservices/${svc}/helm/helm-chart"
+                        def valuesFile = "infra/helm-charts/environments/${ENV}/${svc}-values.yaml"
+
+                        echo "[🚀 DEPLOY] ${svc} to ${ENV}..."
+                        sh """
+                          helm upgrade --install ${svc} ${chartPath} \
+                              --values ${valuesFile} \
+                              --namespace ${ENV} \
+                              --create-namespace
+                        """
+                    }
+                }
+            }
+        }
+    }
+}
