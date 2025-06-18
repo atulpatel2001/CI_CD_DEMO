@@ -44,7 +44,7 @@ pipeline {
           def services = env.CHANGED_SERVICES.split(',')
           for (svc in services) {
             echo "[⚙️ BUILDING] ${svc} with Maven + Jib..."
-            dir("/${svc}") {
+            dir("${svc}") {
               sh "mvn clean package jib:build"
             }
           }
@@ -69,10 +69,10 @@ pipeline {
           def services = env.CHANGED_SERVICES.split(',')
 
           for (svc in services) {
-            def chartPath = "./services/${svc}/helm/helm-chart"
+            def chartPath = "./${svc}/helm/helm-chart"
             def valuesPath = "./infra/helm-charts/enviroment/${env.ENV}/${svc}/values.yaml"
 
-            echo "[🔍] Validating Helm chart for ${svc}..."
+            echo "[🔍] Validating Helm chart for ${svc}...  ${chartPath} ...... ${valuesPath}"
             sh "helm lint ${chartPath}"
             sh "helm template ${svc} ${chartPath} -f ${valuesPath} --namespace ${env.NAMESPACE}"
 
