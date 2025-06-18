@@ -26,7 +26,22 @@ pipeline {
         }
       }
     }
-
+ stage('Build & Push Docker Image') {
+      when {
+        expression { env.CHANGED_SERVICES != null && env.CHANGED_SERVICES != '' }
+      }
+      steps {
+        script {
+          def services = env.CHANGED_SERVICES.split(',')
+          for (svc in services) {
+            echo "[⚙️ BUILDING] ${svc} with Maven + Jib..."
+            dir("/${svc}") {
+              sh "mvn clean package jib:build"
+            }
+          }
+        }
+      }
+    }
     stage('Approve Production Deploy') {
       when {
         expression { env.BRANCH_NAME == 'master' && env.NAMESPACE == 'prod' }
