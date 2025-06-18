@@ -86,7 +86,7 @@
                         <image>openjdk:${java.version}-slim</image>
                     </from>
                     <to>
-                        <image>${DockerHubUsername}/user-service</image>
+                        <image>${DockerHubUsername}/personal-service</image>
                         <tags>latest</tags>
                     </to>
                 </configuration>

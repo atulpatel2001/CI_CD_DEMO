@@ -29,9 +29,6 @@ spec:
 
             {{- if .Values.profile_enabled }}
             - name: SPRING_PROFILES_ACTIVE
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ .Values.global.configMapName }}
-                  key: SPRING_PROFILES_ACTIVE
+              value: {{ .Values.springProfilesActive }}
             {{- end }}
 {{- end -}}

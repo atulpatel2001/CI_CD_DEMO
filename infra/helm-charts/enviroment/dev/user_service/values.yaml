@@ -1,0 +1,22 @@
+deploymentName: user_service
+serviceName: user_service
+appLabel: user_service
+appName: user_service
+springProfilesActive: dev
+
+replicaCount: 1
+
+image:
+  repository: atulpatel1028/user-service
+  tag: v1
+
+containerPort: 8080
+
+service:
+  type: LoadBalancer
+  port: 8080
+  targetPort: 8080
+
+
+appname_enabled: true
+profile_enabled: true

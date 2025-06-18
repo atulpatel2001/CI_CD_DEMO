@@ -1,0 +1,62 @@
+pipeline {
+  agent any
+
+  environment {
+    NAMESPACE = 'dev'
+    ENV = 'dev'
+  }
+
+  stages {
+    stage('Detect Changed Microservices') {
+      steps {
+        script {
+          def changedFiles = sh(script: 'git diff --name-only origin/main...HEAD', returnStdout: true).trim().split('\n')
+          def serviceDirs = changedFiles.findAll { it.startsWith('services/') }.collect {
+            it.split('/')[1]
+          }.unique()
+
+          if (serviceDirs.isEmpty()) {
+            echo "[INFO] No microservice changes detected."
+            currentBuild.result = 'SUCCESS'
+            return
+          }
+
+          env.CHANGED_SERVICES = serviceDirs.join(',')
+          echo "[INFO] Detected changed microservices: ${env.CHANGED_SERVICES}"
+        }
+      }
+    }
+
+    stage('Approve Production Deploy') {
+      when {
+        expression { env.BRANCH_NAME == 'master' && env.NAMESPACE == 'prod' }
+      }
+      steps {
+        input message: 'Approve deployment to PRODUCTION?'
+      }
+    }
+
+    stage('Deploy Changed Microservices') {
+      when {
+        expression { env.CHANGED_SERVICES != null && env.CHANGED_SERVICES != '' }
+      }
+      steps {
+        script {
+          def services = env.CHANGED_SERVICES.split(',')
+
+          for (svc in services) {
+            def chartPath = "./services/${svc}/helm/helm-chart"
+            def valuesPath = "./infra/helm-charts/enviroment/${env.ENV}/${svc}/values.yaml"
+
+            echo "[🔍] Validating Helm chart for ${svc}..."
+            sh "helm lint ${chartPath}"
+            sh "helm template ${svc} ${chartPath} -f ${valuesPath} --namespace ${env.NAMESPACE}"
+
+            echo "[🚀] Deploying ${svc}..."
+            sh "./jenkins/deploy.sh ${svc} ${env.ENV} ${env.NAMESPACE}"
+          }
+        }
+      }
+    }
+  }
+}
