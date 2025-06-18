@@ -35,10 +35,10 @@ helm template "$SERVICE" . -f "$VALUES_FILE" --namespace "$NAMESPACE"
 # 🚀 Install or Upgrade
 if helm status "$SERVICE" -n "$NAMESPACE" > /dev/null 2>&1; then
   echo "[⬆️  INFO] Upgrading $SERVICE in $NAMESPACE..."
-  helm upgrade "$SERVICE" . -f "$VALUES_FILE" -n "$NAMESPACE" --wait --timeout=5m
+#  helm upgrade "$SERVICE" . -f "$VALUES_FILE" -n "$NAMESPACE" --wait --timeout=5m
 else
   echo "[🚀 INFO] Installing $SERVICE in $NAMESPACE..."
-  helm install "$SERVICE" . -f "$VALUES_FILE" -n "$NAMESPACE" --create-namespace --wait --timeout=5m
+#  helm install "$SERVICE" . -f "$VALUES_FILE" -n "$NAMESPACE" --create-namespace --wait --timeout=5m
 fi
 
 echo "[✅ SUCCESS] $SERVICE deployed to $NAMESPACE"

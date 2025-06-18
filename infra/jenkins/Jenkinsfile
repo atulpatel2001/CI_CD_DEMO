@@ -10,19 +10,17 @@ pipeline {
     stage('Detect Changed Microservices') {
       steps {
         script {
-          // 👇 This is CRITICAL to compare with latest remote branch
-          sh "git remote set-url origin https://github.com/atulpatel2001/CI_CD_DEMO.git"
-          sh "git fetch origin master"
-
-          // 👇 Do the actual diff
-          def changedFiles = sh(script: 'git diff --name-only origin/master...HEAD', returnStdout: true).trim().split('\n')
+          def changedFiles = sh(
+            script: 'git diff --name-only HEAD^ HEAD',
+            returnStdout: true
+          ).trim().split('\n')
 
           echo "[DEBUG] Changed files: ${changedFiles}"
 
           def serviceDirs = changedFiles.findAll {
-            it.startsWith('user_service/') || it.startsWith('personal_expense/')
+            it.startsWith('user_service/') || it.startsWith('expense_service/')
           }.collect {
-            it.split('/')[0] // 👈 Use 0 here, not 1, if top-level folder
+            it.split('/')[0]
           }.unique()
 
           if (serviceDirs.isEmpty()) {
